@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ai Là Triệu Phú - Ôn Tập Toán 11</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000033;
+            color: #ffffff;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { color: #ffcc00; text-transform: uppercase; text-shadow: 2px 2px 4px #000; }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0, 0, 100, 0.6);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #0066cc;
+            box-shadow: 0 0 20px rgba(0, 150, 255, 0.5);
+        }
+        textarea {
+            width: 90%; height: 150px; font-size: 16px; padding: 10px;
+            border-radius: 8px; border: 2px solid #0066cc; background: #001133; color: #fff;
+        }
+        button.btn-primary {
+            background-color: #ffcc00; color: #000; font-size: 18px; font-weight: bold;
+            padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; margin-top: 15px;
+        }
+        button.btn-primary:hover { background-color: #ffaa00; }
+        
+        /* Game Screen Styles */
+        #game-screen, #result-screen { display: none; }
+        .header-info {
+            display: flex; justify-content: space-between; font-size: 18px;
+            background: #003366; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px;
+            color: #00ffff; font-weight: bold;
+        }
+        .lifelines { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; }
+        .lifeline-btn {
+            background: #0066cc; color: #fff; border: 2px solid #00ffff; padding: 8px 15px;
+            border-radius: 20px; cursor: pointer; font-weight: bold; transition: 0.3s;
+        }
+        .lifeline-btn:hover:not(:disabled) { background: #0099ff; }
+        .lifeline-btn:disabled { background: #333; border-color: #555; color: #888; cursor: not-allowed; text-decoration: line-through; }
+        
+        .question-box {
+            background: linear-gradient(180deg, #001a4d, #003399); padding: 20px;
+            border: 2px solid #ffcc00; border-radius: 30px; font-size: 22px; font-weight: bold;
+            margin-bottom: 20px; min-height: 80px; display: flex; align-items: center; justify-content: center;
+        }
+        
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .option-btn {
+            background: linear-gradient(90deg, #001a4d, #004080); color: #fff; font-size: 18px;
+            padding: 15px 20px; border: 2px solid #ffcc00; border-radius: 30px;
+            cursor: pointer; text-align: left; transition: all 0.3s;
+        }
+        .option-btn:hover:not(:disabled) { background: #0059b3; transform: scale(1.02); }
+        .option-btn.correct { background: #009900 !important; border-color: #00ff00; color: #fff; }
+        .option-btn.wrong { background: #cc0000 !important; border-color: #ff0000; color: #fff; }
+        .option-btn:disabled { cursor: default; }
+        .hidden-option { visibility: hidden; }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 1000;
+        }
+        .modal-content {
+            background: #003366; padding: 30px; border-radius: 15px; border: 2px solid #ffcc00;
+            max-width: 500px; text-align: center;
+        }
+        .modal-content h2 { color: #ffcc00; }
+        .close-btn { background: #ffcc00; color: #000; padding: 5px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 15px;}
+    </style>
+</head>
+<body>
+
+<div class="container" id="setup-screen">
+    <h1>Ai Là Triệu Phú - Toán 11</h1>
+    <p>Nhập danh sách học sinh (mỗi bạn 1 dòng):</p>
+    <textarea id="student-list">
+Nguyễn Văn A
+Trần Thị B
+Lê Văn C
+Phạm Thu D</textarea><br>
+    <button class="btn-primary" onclick="startGame()">Bốc thăm & Bắt đầu</button>
+</div>
+
+<div class="container" id="game-screen">
+    <div class="header-info">
+        <span id="player-name">Người chơi: ???</span>
+        <span id="prize-money">Tiền thưởng: 0 VNĐ</span>
+    </div>
+    
+    <div class="lifelines">
+        <button class="lifeline-btn" id="ll-5050" onclick="use5050()">50:50</button>
+        <button class="lifeline-btn" id="ll-call" onclick="useCall()">Gọi người thân</button>
+        <button class="lifeline-btn" id="ll-aud" onclick="useAudience()">Hỏi khán giả</button>
+        <button class="lifeline-btn" id="ll-exp" onclick="useExperts()">Tổ tư vấn</button>
+    </div>
+
+    <div class="question-box" id="question-text">Đang tải câu hỏi...</div>
+    
+    <div class="options-grid">
+        <button class="option-btn" id="btn-a" onclick="checkAnswer('a')">A</button>
+        <button class="option-btn" id="btn-b" onclick="checkAnswer('b')">B</button>
+        <button class="option-btn" id="btn-c" onclick="checkAnswer('c')">C</button>
+        <button class="option-btn" id="btn-d" onclick="checkAnswer('d')">D</button>
+    </div>
+</div>
+
+<div class="container" id="result-screen">
+    <h1 id="result-title">Kết Thúc!</h1>
+    <h2 style="color: #00ff00;" id="final-prize">Bạn ra về với: 0 VNĐ</h2>
+    <button class="btn-primary" onclick="location.reload()">Chơi Lại</button>
+</div>
+
+<div class="modal" id="help-modal">
+    <div class="modal-content">
+        <h2 id="modal-title">Trợ Giúp</h2>
+        <p id="modal-text" style="font-size: 18px; line-height: 1.5;"></p>
+        <button class="close-btn" onclick="closeModal()">Đóng</button>
+    </div>
+</div>
+
+<script>
+    // Dữ liệu 40 câu hỏi trắc nghiệm
+    const questions = [
+        { q: "Câu 1: Cho biểu thức P = căn bậc 4 của (x^3), với x>0. Mệnh đề nào đúng?", a: "A. P = x^(4/3)", b: "B. P = x^12", c: "C. P = x^7", d: "D. P = x^(3/4)", ans: "d" },
+        { q: "Câu 2: Với a là số thực dương tùy ý, căn bậc 2 của (a * căn bậc 3 của a) bằng:", a: "A. a^(3/2)", b: "B. a^(-2/3)", c: "C. a^(2/3)", d: "D. a^(4/3)", ans: "c" },
+        { q: "Câu 3: Cho các số thực a, b, m, n (a,b>0). Khẳng định nào đúng?", a: "A. a^m * a^n = a^(m+n)", b: "B. (a^m)^n = a^(m+n)", c: "C. (a+b)^m = a^m + b^m", d: "D. a^m / a^n = căn bậc n của (a^m)", ans: "a" },
+        { q: "Câu 4: Bác An gửi 100 triệu đồng kì hạn 12 tháng với lãi suất kép 5%/năm. Sau 5 năm thu được?", a: "A. 125,628", b: "B. 130,432", c: "C. 127,628", d: "D. 125,000", ans: "c" },
+        { q: "Câu 5: Cho a là số thực dương khác 1. Tính I = log_a(căn bậc 3 của a).", a: "A. I = 1/3", b: "B. I = 3", c: "C. I = 0", d: "D. I = -3", ans: "a" },
+        { q: "Câu 6: Cho a,b > 1 thỏa mãn log_a(b)=2. Tính P = log_(a^2)(b) + log_(ab^2)(b^5).", a: "A. P = 3", b: "B. P = 4", c: "C. P = 2", d: "D. P = 5", ans: "a" },
+        { q: "Câu 7: Với a, b dương và a khác 1. Biểu thức log_a(a^2 * b) bằng:", a: "A. 2 - log_a(b)", b: "B. 2 + log_a(b)", c: "C. 1 + 2*log_a(b)", d: "D. 2*log_a(b)", ans: "b" },
+        { q: "Câu 8: Cho a = log_2(5), b = log_3(5). Biểu thức M = log_21(5) bằng:", a: "A. (ab)/(a+b)", b: "B. ab", c: "C. 1/(ab)", d: "D. (a+b)/(ab)", ans: "a" },
+        { q: "Câu 9: Tập xác định của hàm số y = log_2(x) là:", a: "A. [1; +vô cùng)", b: "B. (0; +vô cùng)", c: "C. [0; +vô cùng)", d: "D. (1; +vô cùng)", ans: "b" },
+        { q: "Câu 10: Đường cong đi xuống qua điểm (0;1) là đồ thị của hàm số nào?", a: "A. y = log_2(x)", b: "B. y = (0.8)^x", c: "C. y = log_0.4(x)", d: "D. y = (căn 2)^x", ans: "b" },
+        { q: "Câu 11: Tìm nghiệm của phương trình 5^(x-1) = 25.", a: "A. x = 1", b: "B. x = 3", c: "C. x = -3", d: "D. x = 5", ans: "b" },
+        { q: "Câu 12: Tập nghiệm của phương trình log_2(1-x) = 2 là:", a: "A. x = -4", b: "B. x = -1", c: "C. x = -3", d: "D. x = 3", ans: "c" },
+        { q: "Câu 13: Tập nghiệm của bất phương trình 3^(x+2) >= 1/9 là:", a: "A. (-vô cùng; 0)", b: "B. [-4; +vô cùng)", c: "C. [0; +vô cùng)", d: "D. (-vô cùng; 4]", ans: "b" },
+        { q: "Câu 14: Chóp S.ABCD đáy hình vuông tâm O cạnh a, SO = a*căn(2)/2. Góc giữa AB và SD là:", a: "A. 120 độ", b: "B. 60 độ", c: "C. 30 độ", d: "D. 90 độ", ans: "b" },
+        { q: "Câu 15: Chóp S.ABCD các cạnh bằng nhau. I, J là trung điểm SC và BC. Góc (IJ, CD) bằng:", a: "A. 90 độ", b: "B. 45 độ", c: "C. 60 độ", d: "D. 30 độ", ans: "c" },
+        { q: "Câu 16: Chóp S.ABC, SA vuông (ABC), SH vuông BC. Khẳng định đúng là:", a: "A. BC vuông SC", b: "B. BC vuông AH", c: "C. BC vuông AB", d: "D. BC vuông AC", ans: "b" },
+        { q: "Câu 17: Chóp S.ABCD có SA vuông (ABCD), đáy hình bình hành. Khẳng định đúng là:", a: "A. SA vuông SB", b: "B. SA vuông CD", c: "C. AB vuông AC", d: "D. AC vuông BD", ans: "b" },
+        { q: "Câu 18: Chóp S.ABCD đáy hình vuông, SA vuông đáy. Mệnh đề nào đúng?", a: "A. BA vuông (SAC)", b: "B. BA vuông (SBC)", c: "C. BA vuông (SAD)", d: "D. BA vuông (SCD)", ans: "c" },
+        { q: "Câu 19: Chóp S.ABC vuông tại B, SA vuông (ABC). Khẳng định đúng là:", a: "A. SC vuông (ABC)", b: "B. BC vuông (SAB)", c: "C. AB vuông (SBC)", d: "D. AC vuông (SAB)", ans: "b" },
+        { q: "Câu 20: Chóp S.ABC vuông tại B, AB=a, BC=3a, SA=căn(30)*a vuông góc đáy. Góc SC và đáy bằng:", a: "A. 45 độ", b: "B. 90 độ", c: "C. 60 độ", d: "D. 30 độ", ans: "c" },
+        { q: "Câu 21: Mệnh đề nào sau đây là đúng?", a: "A. 2 mp vuông góc thì mọi đường thẳng mp này vuông góc mp kia.", b: "B. 2 mp cùng vuông góc mp thứ 3 thì vuông góc với nhau.", c: "C. 2 mp cùng vuông góc mp thứ 3 thì song song với nhau.", d: "D. 2 mp vuông góc, đường thẳng mp này vuông góc giao tuyến thì vuông mp kia.", ans: "d" },
+        { q: "Câu 22: Chóp S.ABC, SA vuông (ABC), tam giác ABC vuông tại B. Kết luận nào SAI?", a: "A. (SAC) vuông (SBC)", b: "B. (SAB) vuông (ABC)", c: "C. (SAC) vuông (ABC)", d: "D. (SAB) vuông (SBC)", ans: "a" },
+        { q: "Câu 23: Chóp S.ABC đáy vuông tại B; SA vuông (ABC). Góc giữa (SBC) và (ABC) là góc nào?", a: "A. SBC", b: "B. SBA", c: "C. SCB", d: "D. SCA", ans: "b" },
+        { q: "Câu 24: Chóp S.ABCD đáy hình vuông cạnh a, SA vuông (ABCD). Khoảng cách từ B đến (SAC) bằng:", a: "A. a/2", b: "B. a*căn(2)/2", c: "C. a*căn(2)/3", d: "D. a*căn(2)/4", ans: "b" },
+        { q: "Câu 25: Chóp S.ABC đáy tam giác đều cạnh 2a, SA = a*căn(3) vuông góc đáy. Thể tích khối chóp là:", a: "A. V = (3/4)*a^3", b: "B. V = a^3", c: "C. V = 2*a^3*căn(2)", d: "D. V = (1/2)*a^3", ans: "b" },
+        { q: "Câu 26: Chóp S.ABC, SA vuông (ABC), tam giác ABC vuông cân tại A, SA = AB = a. Thể tích V là:", a: "A. V = a^3/6", b: "B. V = a^3/4", c: "C. V = 2*a^3", d: "D. V = a^3/2", ans: "a" },
+        { q: "Câu 27: Chóp S.ABC đáy vuông cân tại A, AB=2; SA=3 vuông góc đáy. Thể tích bằng:", a: "A. 12", b: "B. 2", c: "C. 6", d: "D. 4", ans: "b" },
+        { q: "Câu 28: Chọn số từ 1 đến 20. A: chia hết cho 3; B: chia hết cho 4. Biến cố A giao B là:", a: "A. {3;4;12}", b: "B. {3;4;6;8;9;12;15;16;18;20}", c: "C. {12}", d: "D. {3;6;9;12;15;18}", ans: "c" },
+        { q: "Câu 29: P: là học sinh khối 11; Q: là học sinh nam. Biến cố P hợp Q là:", a: "A. Khối 11 và là nam", b: "B. Khối 11 và không là nam", c: "C. Khối 11 hoặc là nam", d: "D. Không là khối 11 hoặc là nam", ans: "c" },
+        { q: "Câu 30: A, B là hai biến cố xung khắc. P(A)=1/5; P(B)=1/3. Tính P(A hợp B).", a: "A. 3/5", b: "B. 8/15", c: "C. 2/15", d: "D. 1/15", ans: "b" },
+        { q: "Câu 31: Lớp có 25 nam, 20 nữ. Chọn 2 bạn. Xác suất chọn được hai bạn cùng giới tính là:", a: "A. 19/99", b: "B. 10/33", c: "C. 49/99", d: "D. 29/99", ans: "c" },
+        { q: "Câu 32: Xác suất biến chứng: X(0,2), Y(0,9) - độc lập. Xác suất cả hai biến chứng nặng là:", a: "A. 0,11", b: "B. 0,18", c: "C. 0,08", d: "D. 0,72", ans: "b" },
+        { q: "Câu 33: A, B độc lập. P(A)=0,2; P(B)=0,5. Xác suất biến cố (A ngang giao B) là:", a: "A. 0,1", b: "B. 0,4", c: "C. 0,04", d: "D. 0,01", ans: "b" },
+        { q: "Câu 34: Chất điểm S(t) = 4t^2 + 2. Vận tốc tức thời tại t=4(s) là:", a: "A. v(4) = 32 m/s", b: "B. v(4) = 34 m/s", c: "C. v(4) = 36 m/s", d: "D. v(4) = 8 m/s", ans: "a" },
+        { q: "Câu 35: Đạo hàm f'(x0) theo định nghĩa là:", a: "A. lim(x->x0) [f(x)-f(x0)]/[x-x0]", b: "B. lim(x->x0) [f(x)/x - f(x0)/x0]", c: "C. lim(x->x0) [x-x0]/[f(x)-f(x0)]", d: "D. [f(x)-f(x0)]/[x-x0]", ans: "a" },
+        { q: "Câu 36: Đạo hàm của y = tan(x) + căn(3)*x là:", a: "A. y' = 1/cos^2(x)", b: "B. y' = 1/cos^2(x) + căn(3)", c: "C. y' = -1/cos^2(x)", d: "D. y' = -1/cos^2(x) + căn(3)", ans: "b" },
+        { q: "Câu 37: S = t^3 - 3t^2 - 9t + 5. Gia tốc tại thời điểm vận tốc triệt tiêu là:", a: "A. 12 m/s^2", b: "B. 9 m/s^2", c: "C. -9 m/s^2", d: "D. -12 m/s^2", ans: "a" },
+        { q: "Câu 38: S(t) = 4 - 2t + 4t^2 + 2t^3. Gia tốc tại t=5(s) là:", a: "A. a = 68 (m/s^2)", b: "B. a = 115 (m/s^2)", c: "C. a = 100 (m/s^2)", d: "D. a = 225 (m/s^2)", ans: "a" },
+        { q: "Câu 39: Cho y = cos(x). Đạo hàm cấp 2 của hàm số là:", a: "A. y'' = sin(x)", b: "B. y'' = -sin(x)", c: "C. y'' = cos(x)", d: "D. y'' = -cos(x)", ans: "d" },
+        { q: "Câu 40: Nếu y = 1/x thì y'' bằng:", a: "A. 1/x^3", b: "B. -1/x^3", c: "C. -2/x^3", d: "D. 2/x^3", ans: "d" }
+    ];
+
+    let currentQuestion = 0;
+    let prize = 0;
+    let playerName = "";
+    let isAnswering = false;
+
+    function formatMoney(amount) {
+        return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " VNĐ";
+    }
+
+    function startGame() {
+        const text = document.getElementById("student-list").value.trim();
+        if (!text) { alert("Vui lòng nhập ít nhất 1 tên học sinh!"); return; }
+        
+        const students = text.split("\n").filter(name => name.trim() !== "");
+        const randIndex = Math.floor(Math.random() * students.length);
+        playerName = students[randIndex].trim();
+        
+        document.getElementById("setup-screen").style.display = "none";
+        document.getElementById("game-screen").style.display = "block";
+        document.getElementById("player-name").innerText = "Người chơi: " + playerName;
+        
+        alert("🎉 Chúc mừng bạn: " + playerName + " đã được chọn lên bảng!");
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        isAnswering = false;
+        const q = questions[currentQuestion];
+        document.getElementById("question-text").innerText = q.q;
+        
+        const options = ['a', 'b', 'c', 'd'];
+        options.forEach(opt => {
+            const btn = document.getElementById("btn-" + opt);
+            btn.innerText = q[opt];
+            btn.className = "option-btn"; // Reset css
+            btn.disabled = false;
+        });
+        
+        document.getElementById("prize-money").innerText = "Tiền thưởng: " + formatMoney(prize);
+    }
+
+    function checkAnswer(selectedOpt) {
+        if (isAnswering) return;
+        isAnswering = true;
+        
+        // Vô hiệu hóa nút trong lúc chờ kết quả
+        ['a', 'b', 'c', 'd'].forEach(opt => document.getElementById("btn-" + opt).disabled = true);
+        
+        const correctOpt = questions[currentQuestion].ans;
+        const selectedBtn = document.getElementById("btn-" + selectedOpt);
+        const correctBtn = document.getElementById("btn-" + correctOpt);
+        
+        if (selectedOpt === correctOpt) {
+            selectedBtn.classList.add("correct");
+            prize += 1000000;
+            
+            setTimeout(() => {
+                currentQuestion++;
+                if (currentQuestion < questions.length) {
+                    loadQuestion();
+                } else {
+                    endGame(true);
+                }
+            }, 1500);
+        } else {
+            selectedBtn.classList.add("wrong");
+            correctBtn.classList.add("correct");
+            
+            setTimeout(() => {
+                endGame(false);
+            }, 2500);
+        }
+    }
+
+    function endGame(isWin) {
+        document.getElementById("game-screen").style.display = "none";
+        const resultScreen = document.getElementById("result-screen");
+        resultScreen.style.display = "block";
+        
+        if (isWin) {
+            document.getElementById("result-title").innerText = "🏆 XUẤT SẮC! BẠN ĐÃ CHIẾN THẮNG!";
+            document.getElementById("result-title").style.color = "#ffcc00";
+        } else {
+            document.getElementById("result-title").innerText = "Rất tiếc! Bạn đã trả lời sai.";
+            document.getElementById("result-title").style.color = "#ff3333";
+        }
+        document.getElementById("final-prize").innerText = "Người chơi " + playerName + " ra về với: " + formatMoney(prize);
+    }
+
+    // --- XỬ LÝ QUYỀN TRỢ GIUP ---
+    function showModal(title, text) {
+        document.getElementById("modal-title").innerText = title;
+        document.getElementById("modal-text").innerHTML = text;
+        document.getElementById("help-modal").style.display = "flex";
+    }
+    
+    function closeModal() {
+        document.getElementById("help-modal").style.display = "none";
+    }
+
+    function use5050() {
+        document.getElementById("ll-5050").disabled = true;
+        const correctOpt = questions[currentQuestion].ans;
+        const options = ['a', 'b', 'c', 'd'];
+        let wrongOpts = options.filter(opt => opt !== correctOpt);
+        
+        // Chọn ngẫu nhiên 2 đáp án sai để ẩn
+        wrongOpts.sort(() => 0.5 - Math.random());
+        document.getElementById("btn-" + wrongOpts[0]).classList.add("hidden-option");
+        document.getElementById("btn-" + wrongOpts[1]).classList.add("hidden-option");
+    }
+
+    function useCall() {
+        document.getElementById("ll-call").disabled = true;
+        const correctOpt = questions[currentQuestion].ans.toUpperCase();
+        showModal("Gọi Người Thân", "📞 Tút... tút...<br><br>Người thân: <i>'Câu này thầy dạy rồi, cháu tự tin chọn đáp án <b>" + correctOpt + "</b> nhé!'</i>");
+    }
+
+    function useAudience() {
+        document.getElementById("ll-aud").disabled = true;
+        const correctOpt = questions[currentQuestion].ans.toUpperCase();
+        showModal("Hỏi Khán Giả", "📊 Bảng thống kê ý kiến lớp:<br><br>Đa số các bạn trong lớp đều gào thét chọn đáp án <b>" + correctOpt + "</b>!");
+    }
+
+    function useExperts() {
+        document.getElementById("ll-exp").disabled = true;
+        const correctOpt = questions[currentQuestion].ans.toUpperCase();
+        showModal("Tổ Tư Vấn", "👨‍🏫 Ý kiến từ thầy cô giáo:<br><br><i>'Dựa vào các định lý toán học, đáp án chính xác chắc chắn là <b>" + correctOpt + "</b>.'</i>");
+    }
+</script>
+
+</body>
+</html>
